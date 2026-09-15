@@ -1,0 +1,43 @@
+name: Screener snapshot
+
+on:
+  schedule:
+    # 12:30 UTC = 18:00 IST, weekdays only (Indian markets close 15:30 IST).
+    - cron: "30 12 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: screener-snapshot
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch screeners
+        run: python scripts/fetch_screeners.py
+
+      - name: Commit snapshots
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name "Harsha Reddy"
+          git config user.email "harshareddygudipati@gmail.com"
+          git add screeners
+          git commit -m "chore: screener snapshot $(TZ=Asia/Kolkata date +%F)"
+          git push

@@ -48,7 +48,7 @@ overwrites that day's file.
 
 ## Schedule
 
-`.github/workflows/screener-snapshot.yml` runs at 12:30 UTC (18:00 IST) Monday
+`.github/workflows/screener-snapshot.yml` runs at 16:30 UTC (22:00 IST) Monday
 through Friday, and can be triggered by hand via **Run workflow**. If one screen
 fails the others are still committed, and the run is marked red.
 

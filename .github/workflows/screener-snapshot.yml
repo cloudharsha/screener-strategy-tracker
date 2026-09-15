@@ -2,8 +2,10 @@ name: Screener snapshot
 
 on:
   schedule:
-    # 12:30 UTC = 18:00 IST, weekdays only (Indian markets close 15:30 IST).
-    - cron: "30 12 * * 1-5"
+    # 16:30 UTC = 22:00 IST, weekdays only. Markets close 15:30 IST, but
+    # screener.in is still serving pre-refresh prices well into the evening,
+    # so this runs late enough to capture settled closes.
+    - cron: "30 16 * * 1-5"
   workflow_dispatch:
 
 permissions:

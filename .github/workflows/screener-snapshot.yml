@@ -2,10 +2,11 @@ name: Screener snapshot
 
 on:
   schedule:
-    # 16:30 UTC = 22:00 IST, weekdays only. Markets close 15:30 IST, but
+    # 16:47 UTC = 22:17 IST, weekdays only. Markets close 15:30 IST, but
     # screener.in is still serving pre-refresh prices well into the evening,
-    # so this runs late enough to capture settled closes.
-    - cron: "30 16 * * 1-5"
+    # so this runs late enough to capture settled closes. Kept off :00/:30,
+    # where GitHub's schedule load peaks and runs get delayed or dropped.
+    - cron: "47 16 * * 1-5"
   workflow_dispatch:
 
 permissions:

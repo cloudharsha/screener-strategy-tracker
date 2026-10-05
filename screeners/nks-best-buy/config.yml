@@ -1,0 +1,8 @@
+name: NKS Best Buy — 5-day swing (main strategy)
+source: chartink
+scans:
+  - tag: NKS
+    url: https://chartink.com/screener/copy-nks-best-buy-stocks-for-intraday-2
+strategy:
+  hold_days: 5
+  slots: 10

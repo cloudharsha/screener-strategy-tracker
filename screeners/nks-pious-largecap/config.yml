@@ -1,0 +1,11 @@
+name: NKS + Pious Large-Cap — 5-day swing (backup strategy)
+source: chartink
+scans:
+  - tag: NKS
+    url: https://chartink.com/screener/copy-nks-best-buy-stocks-for-intraday-2
+  - tag: pious
+    url: https://chartink.com/screener/pious-volume-generator
+    intersect: https://chartink.com/screener/large-cap-stocks
+strategy:
+  hold_days: 5
+  slots: 10

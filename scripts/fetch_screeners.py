@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Snapshot screener.in screens into dated markdown files.
+"""Snapshot screener.in screens and chartink strategies into dated markdown files.
 
-Each folder under screeners/ holds a config.yml (name + url). For every one of
-them this script scrapes the screen and writes screeners/<slug>/<YYYY-MM-DD>.md
-containing the full result table plus a diff against the previous snapshot.
+Each folder under screeners/ holds a config.yml. For screener.in (name + url) this
+script scrapes the screen and writes screeners/<slug>/<YYYY-MM-DD>.md containing the
+full result table plus a diff against the previous snapshot. Configs with
+`source: chartink` are handled by scripts/chartink.py instead.
 """
 
 from __future__ import annotations
@@ -20,6 +21,8 @@ from zoneinfo import ZoneInfo
 import requests
 import yaml
 from bs4 import BeautifulSoup
+
+import chartink
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCREENERS_DIR = REPO_ROOT / "screeners"
@@ -224,8 +227,22 @@ def render(
     return "\n".join(lines)
 
 
+def read_config(path: Path) -> dict:
+    return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+
+
+def check_chartink_config(path: Path, data: dict) -> dict:
+    scans = data.get("scans")
+    if not data.get("name") or not isinstance(scans, list) or not scans:
+        raise ScreenerError(f"{path.relative_to(REPO_ROOT)} needs `name` and a non-empty `scans` list")
+    for scan in scans:
+        if not scan.get("tag") or not scan.get("url"):
+            raise ScreenerError(f"{path.relative_to(REPO_ROOT)}: every scan needs `tag` and `url`")
+    return data
+
+
 def load_config(path: Path) -> tuple[str, str]:
-    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    data = read_config(path)
     name, url = data.get("name"), data.get("url")
     if not name or not url:
         raise ScreenerError(f"{path.relative_to(REPO_ROOT)} needs both `name` and `url`")
@@ -253,6 +270,8 @@ def main() -> int:
     today = now.strftime("%Y-%m-%d")
     session = requests.Session()
     session.headers.update({"User-Agent": USER_AGENT, "Accept-Language": "en-US,en;q=0.9"})
+    chartink_session = requests.Session()
+    chartink_session.headers.update({"User-Agent": USER_AGENT, "Accept-Language": "en-US,en;q=0.9"})
 
     failures: list[str] = []
     for config_path in configs:
@@ -260,6 +279,19 @@ def main() -> int:
         slug = folder.name
         print(f"==> {slug}")
         try:
+            data = read_config(config_path)
+            if data.get("source") == "chartink":
+                config = check_chartink_config(config_path, data)
+                markdown, count = chartink.snapshot(
+                    chartink_session, folder=folder, config=config, today=today, now=now
+                )
+                if args.dry_run:
+                    print(markdown)
+                else:
+                    out = folder / f"{today}.md"
+                    out.write_text(markdown, encoding="utf-8")
+                    print(f"    wrote {out.relative_to(REPO_ROOT)} ({count} stocks)")
+                continue
             name, url = load_config(config_path)
             title, columns, rows = scrape(session, url)
             markdown = render(
